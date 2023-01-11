@@ -4,7 +4,7 @@ import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics.classification import confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
