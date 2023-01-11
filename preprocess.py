@@ -34,7 +34,7 @@ def gen_label_csv(label_csv, reference_csv, dx_dict, classes):
         for _, row in df_reference.iterrows():
             patient_id = row['patient_id']
             dxs = [dx_dict.get(code, '') for code in row['dx'].split(',')]
-            labels = [0] * 9
+            labels = [0] * 7
             for idx, label in enumerate(classes):
                 if label in dxs:
                     labels[idx] = 1
@@ -54,23 +54,18 @@ def gen_label_csv(label_csv, reference_csv, dx_dict, classes):
 
 
 if __name__ == "__main__":
-    leads = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
     dx_dict = {
         '426783006': 'SNR', # Normal sinus rhythm
-        '164889003': 'AF', # Atrial fibrillation
-        '270492004': 'IAVB', # First-degree atrioventricular block
-        '164909002': 'LBBB', # Left bundle branch block
-        '713427006': 'RBBB', # Complete right bundle branch block
-        '59118001': 'RBBB', # Right bundle branch block
-        '284470004': 'PAC', # Premature atrial contraction
-        '63593006': 'PAC', # Supraventricular premature beats
-        '164884008': 'PVC', # Ventricular ectopics
-        '429622005': 'STD', # ST-segment depression
-        '164931005': 'STE', # ST-segment elevation
+        '39732003': 'LAF', # left axis deviation
+        '164934002': 'TWA',  # t wave abnormal
+        '445118002': 'LAFB', #left anterior fascicular block
+        '164889003': 'AF', # atrial fibrillation
+        '713426002': 'IRBBB', # incomplete right bundle branch block
+        '427084000': 'ST', # sinus tachycardia
     }
-    classes = ['SNR', 'AF', 'IAVB', 'LBBB', 'RBBB', 'PAC', 'PVC', 'STD', 'STE']
+    classes = ['SNR', 'LAF', 'TWA', 'LAFB', 'AF', 'IRBBB', 'ST']
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=str, default='data/CPSC', help='Directory to dataset')
+    parser.add_argument('--data-dir', type=str, default='data/WFDB', help='Directory to dataset')
     args = parser.parse_args()
     data_dir = args.data_dir
     reference_csv = os.path.join(data_dir, 'reference.csv')

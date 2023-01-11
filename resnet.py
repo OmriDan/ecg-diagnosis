@@ -31,7 +31,7 @@ class BasicBlock1d(nn.Module):
 
 
 class ResNet1d(nn.Module):
-    def __init__(self, block, layers, input_channels=12, inplanes=64, num_classes=9):
+    def __init__(self, block, layers, input_channels=12, inplanes=64, num_classes=7):
         super(ResNet1d, self).__init__()
         self.inplanes = inplanes
         self.conv1 = nn.Conv1d(input_channels, self.inplanes, kernel_size=15, stride=2, padding=7, bias=False)
