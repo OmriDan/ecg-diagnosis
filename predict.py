@@ -16,7 +16,7 @@ from utils import cal_scores, find_optimal_threshold, split_data
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=str, default='data/CPSC', help='Directory to data dir')
+    parser.add_argument('--data-dir', type=str, default='data/WFDB', help='Directory to data dir')
     parser.add_argument('--leads', type=str, default='all', help='ECG leads to use')
     parser.add_argument('--seed', type=int, default=42, help='Seed to split data')
     parser.add_argument('--batch-size', type=int, default=32, help='Batch size')
@@ -79,7 +79,7 @@ def apply_thresholds(test_loader, net, device, thresholds):
 
 
 def plot_cm(y_trues, y_preds, normalize=True, cmap=plt.cm.Blues):
-    classes = ['SNR', 'AF', 'IAVB', 'LBBB', 'RBBB', 'PAC', 'PVC', 'STD', 'STE']
+    classes = ['SNR', 'LAF', 'TWA', 'LAFB', 'AF', 'IRBBB', 'ST']
     for i, label in enumerate(classes):
         y_true = y_trues[:, i]
         y_pred = y_preds[:, i]

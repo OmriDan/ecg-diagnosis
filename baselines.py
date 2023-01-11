@@ -21,7 +21,7 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=str, default='data/CPSC', help='Data directory')
+    parser.add_argument('--data-dir', type=str, default='data/WFDB', help='Data directory')
     parser.add_argument('--classifier', type=str, default='all', help='Classifier to use: LR, RF, LGB, or MLP')
     parser.add_argument('--seed', type=int, default=42, help='Seed to split data')
     return parser.parse_args()
@@ -40,7 +40,7 @@ def generate_features_csv(features_csv, data_dir, patient_ids):
 
 
 if __name__ == "__main__":
-    classes = ['SNR', 'AF', 'IAVB', 'LBBB', 'RBBB', 'PAC', 'PVC', 'STD', 'STE']
+    classes = ['SNR', 'LAF', 'TWA', 'LAFB', 'AF', 'IRBBB', 'ST']
     args = parse_args()
     data_dir = args.data_dir
     classifier = args.classifier

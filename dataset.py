@@ -41,7 +41,7 @@ class ECGDataset(Dataset):
         else:
             self.use_leads = np.where(np.in1d(self.leads, leads))[0]
         self.nleads = len(self.use_leads)
-        self.classes = ['SNR', 'AF', 'IAVB', 'LBBB', 'RBBB', 'PAC', 'PVC', 'STD', 'STE']
+        self.classes = ['SNR', 'LAF', 'TWA', 'LAFB', 'AF', 'IRBBB', 'ST']
         self.n_classes = len(self.classes)
         self.data_dict = {}
         self.label_dict = {}
@@ -52,8 +52,8 @@ class ECGDataset(Dataset):
         ecg_data, _ = wfdb.rdsamp(os.path.join(self.data_dir, patient_id))
         ecg_data = transform(ecg_data, self.phase == 'train')
         nsteps, _ = ecg_data.shape
-        ecg_data = ecg_data[-15000:, self.use_leads]
-        result = np.zeros((15000, self.nleads)) # 30 s, 500 Hz
+        ecg_data = ecg_data[-5000:, self.use_leads]
+        result = np.zeros((5000, self.nleads)) # 10 s, 500 Hz
         result[-nsteps:, :] = ecg_data
         if self.label_dict.get(patient_id):
             labels = self.label_dict.get(patient_id)

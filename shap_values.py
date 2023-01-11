@@ -89,7 +89,7 @@ def plot_shap2(svs, y_scores, cmap=plt.cm.Blues):
     axs.figure.colorbar(im, ax=axs)
     fmt = '.2f'
     xlabels = leads
-    ylabels = ['SNR', 'AF', 'IAVB', 'LBBB', 'RBBB', 'PAC', 'PVC', 'STD', 'STE'] + ['AVG']
+    ylabels = ['SNR', 'LAF', 'TWA', 'LAFB', 'AF', 'IRBBB', 'ST'] + ['AVG']
     axs.set_xticks(np.arange(len(xlabels)))
     axs.set_yticks(np.arange(len(ylabels)))
     axs.set_xticklabels(xlabels)
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     label_csv = os.path.join(data_dir, 'labels.csv')
     reference_csv = os.path.join(data_dir, 'reference.csv')
     lleads = np.array(['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'])
-    classes = np.array(['SNR', 'AF', 'IAVB', 'LBBB', 'RBBB', 'PAC', 'PVC', 'STD', 'STE'])
+    classes = np.array(['SNR', 'LAF', 'TWA', 'LAFB', 'AF', 'IRBBB', 'ST'])
     if args.use_gpu and torch.cuda.is_available():
         device = torch.device('cuda:0')
     else:
@@ -137,7 +137,6 @@ if __name__ == '__main__':
     df_reference = pd.read_csv(os.path.join(args.data_dir, 'reference.csv'))
     df = pd.merge(df_labels, df_reference[['patient_id', 'age', 'sex', 'signal_len']], on='patient_id', how='left')
 
-    # df = df[df['signal_len'] >= 15000]
 
     patient_ids = df['patient_id'].to_numpy()
     to_explain = patient_ids[:background * 2]
