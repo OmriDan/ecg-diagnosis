@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument('--phase', type=str, default='train', help='Phase: train or test')
     parser.add_argument('--epochs', type=int, default=40, help='Training epochs')
     parser.add_argument('--resume', default=False, action='store_true', help='Resume')
-    parser.add_argument('--use-gpu', default=False, action='store_true', help='Use GPU')
+    parser.add_argument('--use-gpu', default=True, action='store_true', help='Use GPU')
     parser.add_argument('--model-path', type=str, default='', help='Path to saved model')
     return parser.parse_args()
 
