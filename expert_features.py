@@ -56,7 +56,7 @@ def extract_features(ecg_data, sampling_rate=500):
     # may include heart rates later
     all_features = []
     # comment out below line to extract heart rates
-    all_features += extract_heart_rates(ecg_data, sampling_rate=sampling_rate)
+    #all_features += extract_heart_rates(ecg_data, sampling_rate=sampling_rate)
     for signal in ecg_data.T:
         all_features += extract_lead_features(signal)
     return all_features
