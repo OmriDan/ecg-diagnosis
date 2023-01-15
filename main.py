@@ -3,13 +3,14 @@ import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 import numpy as np
 
 from dataset import ECGDataset
 from resnet import resnet34
-from utils import cal_f1s, cal_aucs, split_data
+from utils import cal_f1s, cal_aucs, split_data, accuracy_score
 
 
 def parse_args():
@@ -45,8 +46,17 @@ def train(dataloader, net, args, criterion, epoch, scheduler, optimizer, device)
         output_list.append(output.data.cpu().numpy())
         labels_list.append(labels.data.cpu().numpy())
     # scheduler.step()
-    print('Loss: %.4f' % running_loss)
-    
+    print(f'Avg Loss per epoch:{running_loss/(len(tqdm(dataloader)))}')
+    y_trues = np.vstack(labels_list)
+    y_scores = np.vstack(output_list)
+    f1s = cal_f1s(y_trues, y_scores)
+    avg_f1 = np.mean(f1s)
+    #y_train_accuracy = y_scores > 0.5  # Ask Ariel if OK
+    #accuracies = accuracy_score(y_trues, y_train_accuracy)
+    #avg_accuracy = np.mean(accuracies)
+    output_loss = running_loss/len(output_list)
+    return output_loss, avg_f1#, avg_accuracy
+
 
 def evaluate(dataloader, net, args, criterion, device):
     print('Validating...')
@@ -61,11 +71,15 @@ def evaluate(dataloader, net, args, criterion, device):
         output = torch.sigmoid(output)
         output_list.append(output.data.cpu().numpy())
         labels_list.append(labels.data.cpu().numpy())
-    print('Loss: %.4f' % running_loss)
+    print(f'Avg Loss per epoch:{running_loss/(len(output_list))}')
     y_trues = np.vstack(labels_list)
     y_scores = np.vstack(output_list)
     f1s = cal_f1s(y_trues, y_scores)
     avg_f1 = np.mean(f1s)
+    y_val_accuracy = y_scores > 0.5  # Ask Ariel if OK
+    accuracies = accuracy_score(y_trues, y_val_accuracy)
+    avg_accuracy = np.mean(accuracies)
+    output_loss = running_loss/len(output_list)
     print('F1s:', f1s)
     print('Avg F1: %.4f' % avg_f1)
     if args.phase == 'train' and avg_f1 > args.best_metric:
@@ -76,6 +90,36 @@ def evaluate(dataloader, net, args, criterion, device):
         avg_auc = np.mean(aucs)
         print('AUCs:', aucs)
         print('Avg AUC: %.4f' % avg_auc)
+    return output_loss, avg_f1, avg_accuracy
+
+
+def plot_metrics(all_metrics_dict):
+    epoch_vec = np.arange(args.epochs)
+
+    # F1
+    fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
+    ax.plot(epoch_vec, all_metrics_dict["train_f1"], epoch_vec, all_metrics_dict["val_f1"])
+    ax.set_xlabel("epoch")
+    ax.set_ylabel("F1 score")
+    ax.set_title('F1 as a function of epochs')
+    ax.set_legend('train', 'val')
+    fig.savefig("f1.png")
+
+    # Accuracy
+    fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
+    ax.plot(epoch_vec, all_metrics_dict["val_accuracy"])
+    ax.set_xlabel("epoch")
+    ax.set_title("Accuracy")
+    ax.title('Accuracy as a function of epochs')
+    fig.savefig("accuracy.png")
+
+    # Loss
+    fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
+    ax.plot(epoch_vec, all_metrics_dict["train_loss"], epoch_vec, all_metrics_dict["val_loss"])
+    ax.set_xlabel("epoch")
+    ax.set_ylabel("Loss")
+    ax.set_legend('train', 'val')
+    fig.savefig("loss.png")
 
 
 if __name__ == "__main__":
@@ -98,28 +142,44 @@ if __name__ == "__main__":
     else:
         leads = args.leads.split(',')
         nleads = len(leads)
-    
     label_csv = os.path.join(data_dir, 'labels.csv')
-    
     train_folds, val_folds, test_folds = split_data(seed=args.seed)
     train_dataset = ECGDataset('train', data_dir, label_csv, train_folds, leads)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers,
+                              pin_memory=True)
     val_dataset = ECGDataset('val', data_dir, label_csv, val_folds, leads)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers,
+                            pin_memory=True)
     test_dataset = ECGDataset('test', data_dir, label_csv, test_folds, leads)
-    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers,
+                             pin_memory=True)
     net = resnet34(input_channels=nleads).to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, gamma=0.1)
-    
+
     criterion = nn.BCEWithLogitsLoss()
-    
+    #train_accuracy = []
+    val_accuracy = []
+    train_loss = []
+    val_loss = []
+    train_f1 = []
+    val_f1 = []
     if args.phase == 'train':
         if args.resume:
             net.load_state_dict(torch.load(args.model_path, map_location=device))
         for epoch in range(args.epochs):
-            train(train_loader, net, args, criterion, epoch, scheduler, optimizer, device)
-            evaluate(val_loader, net, args, criterion, device)
+            curr_train_loss, curr_train_f1 = train(train_loader, net, args, criterion, epoch,
+                                                                        scheduler, optimizer, device)
+            curr_val_loss, curr_val_f1, curr_val_accuracy = evaluate(val_loader, net, args, criterion, device)
+            train_loss.append(curr_train_loss)
+            val_loss.append(curr_val_loss)
+            #train_accuracy.append(curr_train_accuracy)
+            val_accuracy.append(curr_val_accuracy)
+            train_f1.append(curr_train_f1)
+            val_f1.append(curr_val_f1)
     else:
         net.load_state_dict(torch.load(args.model_path, map_location=device))
         evaluate(test_loader, net, args, criterion, device)
+    all_metrics_dict = {'val_accuracy': val_accuracy, 'train_f1': train_f1,
+                        'val_f1': val_f1, 'train_loss': train_loss, 'val_loss': val_loss}
+    plot_metrics(all_metrics_dict)
