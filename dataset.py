@@ -46,6 +46,11 @@ class ECGDataset(Dataset):
         self.data_dict = {}
         self.label_dict = {}
 
+    def zero_center(self, data):
+        data = data - np.mean(data, axis=0)
+        data = data / np.std(data, axis=0)
+        return data
+
     def __getitem__(self, index: int):
         row = self.labels.iloc[index]
         patient_id = row['patient_id']
@@ -53,13 +58,17 @@ class ECGDataset(Dataset):
         ecg_data = transform(ecg_data, self.phase == 'train')
         nsteps, _ = ecg_data.shape
         ecg_data = ecg_data[-5000:, self.use_leads]
+        ecg_data = self.zero_center(ecg_data)
+        #ecg_data_norm = np.linalg.norm(ecg_data)
+        #ecg_data = ecg_data / np.linalg.norm(ecg_data_norm) # added normalization
         result = np.zeros((5000, self.nleads)) # 10 s, 500 Hz
         result[-nsteps:, :] = ecg_data
-        if self.label_dict.get(patient_id):
-            labels = self.label_dict.get(patient_id)
-        else:
+        if patient_id not in self.label_dict.keys():
             labels = row[self.classes].to_numpy(dtype=np.float32)
             self.label_dict[patient_id] = labels
+        else:
+            labels = self.label_dict.get(patient_id)
+
         return torch.from_numpy(result.transpose()).float(), torch.from_numpy(labels).float()
 
     def __len__(self):
