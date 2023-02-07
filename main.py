@@ -193,9 +193,19 @@ if __name__ == "__main__":
             val_accuracy.append(curr_val_accuracy)
             train_f1.append(curr_train_f1)
             val_f1.append(curr_val_f1)
-    else:
-        net.load_state_dict(torch.load(args.model_path, map_location=device))
-        evaluate(test_loader, net, args, criterion, device)
+
+    # Testing and documentation phase
+    thresholds = get_thresholds(val_loader, net, device, args.threshold_path)
+    print('Thresholds:', thresholds)
+
+    print('Results on validation data:')
+    apply_thresholds(val_loader, net, device, thresholds, 'val')
+
+    print('Results on test data:')
+    apply_thresholds(test_loader, net, device, thresholds, 'test')
+    net.load_state_dict(torch.load(args.model_path, map_location=device))
+    test_loss, test_f1, test_accuracy = evaluate(test_loader, net, args, criterion, device)
     all_metrics_dict = {'val_accuracy': val_accuracy, 'train_f1': train_f1,
                         'val_f1': val_f1, 'train_loss': train_loss, 'val_loss': val_loss}
     plot_metrics(all_metrics_dict)
+    print(f'Test results: Loss:{test_loss}, F1:{test_f1}')
