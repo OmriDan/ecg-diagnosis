@@ -93,6 +93,18 @@ def evaluate(dataloader, net, args, criterion, device):
     return output_loss, avg_f1, avg_accuracy
 
 
+def calc_weights(df, dataloader, lambda_param=0.01):
+    df = df.labels.iloc[:, 1:8]
+    label_counts = df.sum()
+    label_weights = np.array(1/label_counts)
+    sample_weights = [0] * len(tqdm(dataloader))
+    for idx, (data, label) in enumerate(tqdm(dataloader)):
+        sample_weights[idx] = np.dot(label_weights, label)
+    #regularization_term = lambda_param * sum(sample_weights ** 2)
+    #sample_weights = [1/label_counts[i] for i in range(len(df.columns))]
+    return sample_weights
+
+
 def plot_metrics(all_metrics_dict):
     epoch_vec = np.arange(args.epochs)
 
@@ -145,8 +157,10 @@ if __name__ == "__main__":
     label_csv = os.path.join(data_dir, 'labels.csv')
     train_folds, val_folds, test_folds = split_data(seed=args.seed)
     train_dataset = ECGDataset('train', data_dir, label_csv, train_folds, leads)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers,
-                              pin_memory=True)
+    train_weights = calc_weights(train_dataset, train_dataset)
+    train_sampler = torch.utils.data.sampler.WeightedRandomSampler(train_weights, len(train_weights), replacement=True)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers,
+                              pin_memory=True, sampler=train_sampler)
     val_dataset = ECGDataset('val', data_dir, label_csv, val_folds, leads)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers,
                             pin_memory=True)
