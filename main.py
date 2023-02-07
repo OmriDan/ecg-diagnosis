@@ -102,24 +102,24 @@ def plot_metrics(all_metrics_dict):
     ax.set_xlabel("epoch")
     ax.set_ylabel("F1 score")
     ax.set_title('F1 as a function of epochs')
-    ax.set_legend('train', 'val')
-    fig.savefig("f1.png")
+    ax.legend(['train', 'val'])
+    fig.savefig("Sampled_f1.png")
 
     # Accuracy
     fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
     ax.plot(epoch_vec, all_metrics_dict["val_accuracy"])
     ax.set_xlabel("epoch")
-    ax.set_title("Accuracy")
-    ax.title('Accuracy as a function of epochs')
-    fig.savefig("accuracy.png")
+    ax.set_title('Accuracy as a function of epochs')
+    fig.savefig("Sampled_accuracy.png")
 
     # Loss
     fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
     ax.plot(epoch_vec, all_metrics_dict["train_loss"], epoch_vec, all_metrics_dict["val_loss"])
     ax.set_xlabel("epoch")
     ax.set_ylabel("Loss")
-    ax.set_legend('train', 'val')
-    fig.savefig("loss.png")
+    ax.legend(['train', 'val'])
+    ax.set_title('Loss as a function of epochs')
+    fig.savefig("Sampled_loss.png")
 
 
 if __name__ == "__main__":
