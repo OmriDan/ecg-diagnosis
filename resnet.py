@@ -10,7 +10,7 @@ class BasicBlock1d(nn.Module):
         self.conv1 = nn.Conv1d(inplanes, planes, kernel_size=7, stride=stride, padding=3, bias=False)
         self.bn1 = nn.BatchNorm1d(planes)
         self.relu = nn.ReLU(inplace=True)
-        self.dropout = nn.Dropout(p=0.2)
+        self.dropout = nn.Dropout(p=0.7)
         self.conv2 = nn.Conv1d(planes, planes, kernel_size=7, stride=1, padding=3, bias=False)
         self.bn2 = nn.BatchNorm1d(planes)
         self.downsample = downsample
@@ -45,7 +45,7 @@ class ResNet1d(nn.Module):
         self.adaptiveavgpool = nn.AdaptiveAvgPool1d(1)
         self.adaptivemaxpool = nn.AdaptiveMaxPool1d(1)
         self.fc = nn.Linear(512 * block.expansion * 2, num_classes)
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.7)
     
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
