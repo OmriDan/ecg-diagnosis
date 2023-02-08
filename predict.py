@@ -69,16 +69,16 @@ def apply_thresholds(test_loader, net, device, thresholds):
         y_preds.append(y_pred)
     y_preds = np.array(y_preds).transpose()
     scores = np.array(scores)
-    print('Precisions:', scores[:, 0])
-    print('Recalls:', scores[:, 1])
-    print('F1s:', scores[:, 2])
-    print('AUCs:', scores[:, 3])
-    print('Accs:', scores[:, 4])
-    print(np.mean(scores, axis=0))
-    plot_cm(y_trues, y_preds)
+    print(f'{title} Precisions:', scores[:, 0])
+    print(f'{title} Recalls:', scores[:, 1])
+    print(f'{title} F1s:', scores[:, 2])
+    print(f'{title} AUCs:', scores[:, 3])
+    print(f'{title} Accs:', scores[:, 4])
+    print(f'{title} mean scores: {np.mean(scores, axis=0)}')
+    plot_cm(y_trues, y_preds, title)
 
 
-def plot_cm(y_trues, y_preds, normalize=True, cmap=plt.cm.Blues):
+def plot_cm(y_trues, y_preds, title, normalize=True, cmap=plt.cm.Blues):
     classes = ['SNR', 'LAF', 'TWA', 'LAFB', 'AF', 'IRBBB', 'ST']
     for i, label in enumerate(classes):
         y_true = y_trues[:, i]
@@ -92,7 +92,7 @@ def plot_cm(y_trues, y_preds, normalize=True, cmap=plt.cm.Blues):
         ax.set(xticks=np.arange(cm.shape[1]),
            yticks=np.arange(cm.shape[0]),
            xticklabels=[0, 1], yticklabels=[0, 1],
-           title=label,
+           title=f'{title}_{label}',
            ylabel='True label',
            xlabel='Predicted label')
         plt.setp(ax.get_xticklabels(), ha="center")
@@ -106,7 +106,7 @@ def plot_cm(y_trues, y_preds, normalize=True, cmap=plt.cm.Blues):
                         color="white" if cm[i, j] > thresh else "black")
         np.set_printoptions(precision=3)
         fig.tight_layout()
-        plt.savefig(f'results/{label}.png')
+        plt.savefig(f'results/{title}_{label}.png')
         plt.close(fig)
 
 
