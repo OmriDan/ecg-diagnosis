@@ -8,11 +8,11 @@ from sklearn.metrics import classification_report, confusion_matrix
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-
 from resnet import resnet34
 from dataset import ECGDataset
 from utils import cal_scores, find_optimal_threshold, split_data
-
+import matplotlib
+matplotlib.use('Agg')
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -49,7 +49,8 @@ def get_thresholds(val_loader, net, device, threshold_path):
     return thresholds
 
 
-def apply_thresholds(test_loader, net, device, thresholds):
+def apply_thresholds(test_loader, net, device, thresholds, title):
+    classes = ['SNR', 'LAF', 'TWA', 'LAFB', 'AF', 'IRBBB', 'ST']
     output_list, label_list = [], []
     for _, (data, label) in enumerate(tqdm(test_loader)):
         data, labels = data.to(device), label.to(device)
@@ -75,11 +76,30 @@ def apply_thresholds(test_loader, net, device, thresholds):
     print(f'{title} AUCs:', scores[:, 3])
     print(f'{title} Accs:', scores[:, 4])
     print(f'{title} mean scores: {np.mean(scores, axis=0)}')
-    plot_cm(y_trues, y_preds, title)
+    plot_cm(y_trues, y_preds, title, classes)
+    build_scores_table(scores, classes, title)
 
+def build_scores_table(scores, classes,title):
+    class_names = classes
+    # Define the score names
+    score_names = ['Precision', 'Recall', 'F1', 'AUC', 'Acc']
+    # Create a DataFrame with the scores and class names
+    df = pd.DataFrame(np.round(scores, 2), index=class_names, columns=score_names)
 
-def plot_cm(y_trues, y_preds, title, normalize=True, cmap=plt.cm.Blues):
-    classes = ['SNR', 'LAF', 'TWA', 'LAFB', 'AF', 'IRBBB', 'ST']
+    # Create a table with the scores
+    fig, ax = plt.subplots()
+    table = ax.table(cellText=df.values, colLabels=df.columns, rowLabels=df.index, loc='center')
+    table.set_fontsize(25)
+    table.scale(10, 15)
+
+    # Remove the axis
+    ax.axis('tight')
+    ax.axis('off')
+
+    # Save the table as a PNG file
+    plt.savefig(f'results/{title}_scores_table.png', bbox_inches='tight')
+
+def plot_cm(y_trues, y_preds, title, classes, normalize=True, cmap=plt.cm.Blues):
     for i, label in enumerate(classes):
         y_true = y_trues[:, i]
         y_pred = y_preds[:, i]
@@ -147,7 +167,7 @@ if __name__ == "__main__":
     print('Thresholds:', thresholds)
 
     print('Results on validation data:')
-    apply_thresholds(val_loader, net, device, thresholds)
+    apply_thresholds(val_loader, net, device, thresholds,title='val')
 
     print('Results on test data:')
-    apply_thresholds(test_loader, net, device, thresholds)
+    apply_thresholds(test_loader, net, device, thresholds, title='test')
