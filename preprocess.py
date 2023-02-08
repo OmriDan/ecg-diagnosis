@@ -52,8 +52,7 @@ def gen_label_csv(label_csv, reference_csv, dx_dict, classes):
         df = df[df['keep'] > 0]
         df[columns].to_csv(label_csv, index=None)
 
-
-if __name__ == "__main__":
+def init_preprocess(data_dir):
     dx_dict = {
         '426783006': 'SNR', # Normal sinus rhythm
         '39732003': 'LAF', # left axis deviation
@@ -64,11 +63,14 @@ if __name__ == "__main__":
         '427084000': 'ST', # sinus tachycardia
     }
     classes = ['SNR', 'LAF', 'TWA', 'LAFB', 'AF', 'IRBBB', 'ST']
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=str, default='data/WFDB', help='Directory to dataset')
-    args = parser.parse_args()
-    data_dir = args.data_dir
     reference_csv = os.path.join(data_dir, 'reference.csv')
     label_csv = os.path.join(data_dir, 'labels.csv')
     gen_reference_csv(data_dir, reference_csv)
     gen_label_csv(label_csv, reference_csv, dx_dict, classes)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data-dir', type=str, default='data/WFDB', help='Directory to dataset')
+    args = parser.parse_args()
+    data_dir = args.data_dir
+    init_preprocess(data_dir)
