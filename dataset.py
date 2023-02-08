@@ -58,7 +58,7 @@ class ECGDataset(Dataset):
         ecg_data = transform(ecg_data, self.phase == 'train')
         nsteps, _ = ecg_data.shape
         ecg_data = ecg_data[-5000:, self.use_leads]
-        ecg_data = self.zero_center(ecg_data)
+        #ecg_data = self.zero_center(ecg_data) Not zero-center for now
         #ecg_data_norm = np.linalg.norm(ecg_data)
         #ecg_data = ecg_data / np.linalg.norm(ecg_data_norm) # added normalization
         result = np.zeros((5000, self.nleads)) # 10 s, 500 Hz
