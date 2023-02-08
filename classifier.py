@@ -2,16 +2,21 @@ import argparse
 import os
 import pickle
 import csv
-
+import openpyxl
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-
 from resnet import resnet34
 from dataset import ECGDataset
 from utils import cal_scores, find_optimal_threshold, split_data
 from preprocess import *
+from predict import plot_cm
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('Agg')
+
 
 def split_data_classify(seed=42):
     folds = range(1, 11)
@@ -73,10 +78,53 @@ def apply_thresholds(test_loader, net, device, thresholds):
     y_preds = np.array(y_preds).transpose()
     scores = np.array(scores)
 
-    return y_trues
+    return y_trues, y_preds, scores
+
+
+def highlight_font_color(val):
+    if val == (1,1) or val == (0,0):  # True Positive / True Negative
+        color = 'green'
+        font_weight = 'bold'
+    elif val == (0,1) or val == (1,0): # False Positive / False Negative
+        color = 'red'
+        font_weight = 'bold'
+    else:
+        color = 'transparent'
+        font_weight = 'normal'
+    return f'background-color: {color}; font-weight: {font_weight}'
+
+
+def build_result_csv(test_loader, net, device, thresholds, classes):
+    y_trues, y_preds, scores = apply_thresholds(test_loader, net, device, thresholds)
+    values = []
+    for i in range(len(classes)):
+        values.append([(int(y_trues[j, i]), int(y_preds[j, i])) for j in range(len(y_trues))])
+
+    data = dict(zip(classes, values))
+
+    df = pd.DataFrame(data)
+    df['patient_id'] = [test_loader.sampler.data_source.labels.patient_id[i] for i in range(len(y_trues))]
+
+    cols = df.columns.tolist()
+    cols = cols[-1:] + cols[:-1]
+    df = df[cols]
+
+    # Apply the bold_if_one function to each cell in the DataFrame
+    df.style.applymap(highlight_font_color).to_excel('results/result_on_test.xlsx')
+    return y_trues, y_preds, scores
 
 
 if __name__ == "__main__":
+    args = parse_args()
+    args.data_dir = r'C:\Data_for_Physionet\Data\WFDB' #args.data_dir
+    data_dir = args.data_dir
+    args.model_path = r"C:\ecg-diagnosis\models\resnet34_WFDB_all_42.pth"  # f'models/resnet34_{database}_{args.leads}_{args.seed}.pth'
+    args.threshold_path = r"C:\ecg-diagnosis\models\WFDB-threshold.pkl" #f'models/{database}-threshold.pkl'
+
+    # build labels.csv, reference.csv
+    init_preprocess(data_dir)
+
+    # build results.csv
     dx_dict = {
         '426783006': 'SNR', # Normal sinus rhythm
         '39732003': 'LAF', # left axis deviation
@@ -87,23 +135,9 @@ if __name__ == "__main__":
         '427084000': 'ST', # sinus tachycardia
     }
     classes = ['SNR', 'LAF', 'TWA', 'LAFB', 'AF', 'IRBBB', 'ST']
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=str, default='data/WFDB', help='Directory to dataset')
-    args = parser.parse_args()
-    data_dir = args.data_dir
-    reference_csv = os.path.join(data_dir, 'reference.csv')
-    label_csv = os.path.join(data_dir, 'labels.csv')
-    gen_reference_csv(data_dir, reference_csv)
-    gen_label_csv(label_csv, reference_csv, dx_dict, classes)
 
-
-    args = parse_args()
-    data_dir = os.path.normpath(args.data_dir)
     database = os.path.basename(data_dir)
-    if not args.model_path:
-        args.model_path = f'models/resnet34_{database}_{args.leads}_{args.seed}.pth'
-    args.threshold_path = f'models/{database}-threshold.pkl'
-    if args.use_gpu and torch.cuda.is_available():
+    if torch.cuda.is_available():
         device = torch.device('cuda:0')
     else:
         device = 'cpu'
@@ -116,17 +150,21 @@ if __name__ == "__main__":
         nleads = len(leads)
     data_dir = args.data_dir
     label_csv = os.path.join(data_dir, 'labels.csv')
-    
+
+    # initilize net for testing
     net = resnet34(input_channels=nleads).to(device)
     net.load_state_dict(torch.load(args.model_path, map_location=device))
     net.eval()
 
+    # running through all vals in test folder
     test_folds = split_data_classify(seed=args.seed)
     test_dataset = ECGDataset('test', data_dir, label_csv, test_folds, leads)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
     thresholds = pickle.load(open(args.threshold_path, 'rb'))
 
     print('Results on test data:')
-    y_trues=apply_thresholds(test_loader, net, device, thresholds)
+    y_trues, y_preds, scores = build_result_csv(test_loader, net, device, thresholds, classes)
+    build_scores_table(scores, classes, title='classify')
+    plot_cm(y_trues, y_preds, title='classify')
 
 
