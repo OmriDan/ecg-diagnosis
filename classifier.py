@@ -130,7 +130,7 @@ if __name__ == "__main__":
         device = torch.device('cuda:0')
     else:
         device = 'cpu'
-    
+
     if args.leads == 'all':
         leads = 'all'
         nleads = 12
