@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=42, help='Seed to split data')
     parser.add_argument('--batch-size', type=int, default=4, help='Batch size')
     parser.add_argument('--num-workers', type=int, default=4, help='Number of workers to load data')
-    parser.add_argument('--use-gpu', default=False, action='store_true', help='Use gpu')
+    parser.add_argument('--use-gpu', default=True, action='store_true', help='Use gpu')
     parser.add_argument('--model-path', type=str, default='', help='Path to saved model')
     return parser.parse_args()
 
