@@ -4,6 +4,7 @@ import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from sklearn.metrics import classification_report, confusion_matrix
 import torch
 from torch.utils.data import DataLoader
@@ -16,12 +17,12 @@ matplotlib.use('Agg')
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=str, default='data/WFDB', help='Directory to data dir')
+    parser.add_argument('--data-dir', type=str, default=r'C:\Data_for_Physionet\Data\WFDB', help='Directory to data dir')
     parser.add_argument('--leads', type=str, default='all', help='ECG leads to use')
     parser.add_argument('--seed', type=int, default=42, help='Seed to split data')
-    parser.add_argument('--batch-size', type=int, default=32, help='Batch size')
+    parser.add_argument('--batch-size', type=int, default=4, help='Batch size')
     parser.add_argument('--num-workers', type=int, default=4, help='Number of workers to load data')
-    parser.add_argument('--use-gpu', default=False, action='store_true', help='Use gpu')
+    parser.add_argument('--use-gpu', default=True, action='store_true', help='Use gpu')
     parser.add_argument('--model-path', type=str, default='', help='Path to saved model')
     return parser.parse_args()
 
